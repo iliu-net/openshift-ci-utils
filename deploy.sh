@@ -41,6 +41,7 @@ do
 done
 #
 set -e
+gem install net-ssh --version 2.9.4
 gem install rhc
 AUTH="-l $OPENSHIFT_USER -p $OPENSHIFT_SECRET"
 rhc app-show $OPENSHIFT_APP $AUTH | grep -v 'Password:' | grep -v 'Username:'
