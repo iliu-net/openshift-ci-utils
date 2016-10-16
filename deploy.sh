@@ -18,6 +18,10 @@ else
   echo "Not a BRANCH commit.  No deployment possible"
   exit 0
 fi
+
+# Allow for additional customizations...
+[ -f ".diydeploy_rc" ] && . ".diydeploy_rc"
+
 [ -n "$OPENSHIFT_USER" ] && echo "USER: $OPENSHIFT_USER"
 if [ -n "$OPENSHIFT_SECRET" ] ; then
   echo -n "SECRET: "
