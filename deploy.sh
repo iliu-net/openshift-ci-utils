@@ -7,20 +7,15 @@ fatal() {
 
 echo "DIY DEPLOY OPENSHIFT"
 if [ -n "$TRAVIS_BRANCH" ] ; then
-  OPENSHIFT_APP="$(grep ' - deploy '"$TRAVIS_BRANCH"':' .travis.yml | cut -d: -f2)"
-  if [ -n "$OPENSHIFT_APP" ] ; then
-    echo "App: $OPENSHIFT_APP"
-  else
-    echo "Branch $TRAVIS_BRANCH is not deployable"
-    exit 0
-  fi
+  OPENSHIFT_APP="$TRAVIS_BRANCH"
 else
   echo "Not a BRANCH commit.  No deployment possible"
   exit 0
 fi
 
 # Allow for additional customizations...
-[ -f ".diydeploy_rc" ] && . ".diydeploy_rc"
+user_cfg=".diydeploy_rc"
+[ -f "$user_cfg" ] && . "$user_cfg"
 
 [ -n "$OPENSHIFT_USER" ] && echo "USER: $OPENSHIFT_USER"
 if [ -n "$OPENSHIFT_SECRET" ] ; then

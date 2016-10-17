@@ -16,13 +16,15 @@ for my taste.
    - git submodule add $repourl $dir
 1. When cloning your project repo use:
    - git clone --recursive $project
+   or (within repo)
+   - git update --init
 2. Create/modify a `.travis.yml` file.
    - Add your tests as necessary
    - Configure your openshift credentials:
      - travis encrypt OPENSHIFT_USER=$username --add env.global
      - travis encrypt OPENSHIFT_SECRET=$pwd --add env.global
-   - In a section `diydeploy:` (actually can be anything), add lines like:
-     - {space}-{space}deploy{space}$branch:$openshift_app
+   - OPENSHIFT_APP will default to the travis branch name
+   - Variables can be overriden from a `.diydeploy_rc` script
    - Create deploy section.  See example:
 
 ```yaml
