@@ -1,0 +1,10 @@
+#!/bin/sh
+find * -type f -name '*.php' | (
+  rv=0
+  while read php
+  do
+    echo -n "$php: "
+    php -l "$php" || rv=1
+  done
+  exit $rv
+)
