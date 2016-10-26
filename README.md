@@ -17,7 +17,7 @@ for my taste.
 1. When cloning your project repo use:
    - git clone --recursive $project
    or (within repo)
-   - git update --init
+   - git submodule update --init
 2. Create/modify a `.travis.yml` file.
    - Add your tests as necessary
    - Configure your openshift credentials:
@@ -48,3 +48,10 @@ for my taste.
     `script` and its results do not affect the status of the build.
   - `deploy` : Can be overriden with _experimental_ script provider.
   - `before_deploy` can mark the build as **errored**.
+
+
+* * *
+
+Push Plug
+
+Used to push to a wordpress site a plugin.

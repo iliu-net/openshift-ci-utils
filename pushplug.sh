@@ -5,16 +5,22 @@ fatal() {
   exit 1
 }
 
-echo "DIY DEPLOY OPENSHIFT"
+echo "PUSH PLUG"
 if [ -n "$TRAVIS_BRANCH" ] ; then
   OPENSHIFT_APP="$TRAVIS_BRANCH"
 else
   echo "Not a BRANCH commit.  No deployment possible"
   exit 0
 fi
+if [ -n "$TRAVIS_REPO_SLUG" ] ; then
+  WP_PLUGIN="$(basename "$TRAVIS_REPO_SLUG")"
+fi
+
+UNPACK_CMD='tar -zxf -'
+PACK_CMD='tar -zcf - --exclude-vcs .'
 
 # Allow for additional customizations...
-user_cfg="./.diydeploy_rc"
+user_cfg="./.pushplug_rc"
 [ -f "$user_cfg" ] && . "$user_cfg"
 
 [ -n "$OPENSHIFT_USER" ] && echo "USER: $OPENSHIFT_USER"
@@ -33,7 +39,7 @@ fi
 [ -n "$TRAVIS_REPO_SLUG" ] && echo "Slug: $TRAVIS_REPO_SLUG"
 [ -n "$TRAVIS_TAG" ] && echo "Tag: $TRAVIS_TAG"
 
-for k in OPENSHIFT_USER OPENSHIFT_SECRET OPENSHIFT_APP
+for k in OPENSHIFT_USER OPENSHIFT_SECRET OPENSHIFT_APP WP_PLUGIN
 do
   eval v="\$$k"
   [ -z "$v" ] && fatal "MISSING $k"
@@ -45,21 +51,33 @@ gem install net-ssh --version 2.9.4
 gem install rhc
 AUTH="-l $OPENSHIFT_USER -p $OPENSHIFT_SECRET"
 rhc app-show $OPENSHIFT_APP $AUTH | grep -v 'Password:' | grep -v 'Username:'
-GITURL="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  Git URL: ' | cut -d: -f2-)"
-[ -z "$GITURL" ] && fatal "MISSING GITURL"
-GITHOST="$(echo $GITURL | cut -d'@' -f2 | cut -d/ -f1)"
-[ -z "$GITHOST" ] && fatal "MISSING GITHOST"
-ssh-keyscan $GITHOST > ~/.ssh/known_hosts
 
+SSHADDR="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  SSH: ' | cut -d: -f2-)"
+[ -z "$SSHADDR" ] && fatal "MISSING SSHADDR"
+SSHHOST="$(echo $SSHADDR| cut -d'@' -f2)"
+[ -z "$SSHHOST" ] && fatal "MISSING SSHHOST ($SSHADDR)"
+ssh-keyscan $SSHHOST > ~/.ssh/known_hosts
 yes '' | ssh-keygen -N ''
 rhc sshkey remove temp $AUTH || true
 rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
-git remote add openshift -f $GITURL
-pwd
-git status
-git remote -v
-echo Merging changes from openshift/master to our branch
-git merge openshift/master -s recursive -X ours
-echo Sending changes to openshift/master
-git push openshift HEAD:master
+
+SSHCMD="ssh -i $HOME/.ssh/id_rsa $SSHADDR"
+
+# Remove current Plugin data/directory
+# Copy plugin <content>/$WP_PLUGIN.t
+# Move $WP_PLUGIN to $WP_PLUGIN.o
+# move $WP_PLUGIN.t to $WP_PLUGIN
+# rm -rf $P_PLUGIN.o
+
+
+set -x
+plug_path="app-root/data/current/wp-content/plugins/$WP_PLUGIN"
+$SSHCMD mkdir -p "$plug_path.t"
+$PACK_CMD | $SSHCMD $UNPACK_CMD -C "$plug_path.t"
+(
+  echo "mv \"$plug_path\" \"$plug_path.p\""
+  echo "mv \"$plug_path.t\" \"$plug_path\""
+  echo "rm -rf \"$plug_path.p\""
+) | $SSHCMD
+
 rhc sshkey remove temp $AUTH || true
