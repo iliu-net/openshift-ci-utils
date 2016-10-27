@@ -9,8 +9,10 @@ echo "DIY DEPLOY OPENSHIFT"
 if [ -n "$TRAVIS_BRANCH" ] ; then
   OPENSHIFT_APP="$TRAVIS_BRANCH"
 else
-  echo "Not a BRANCH commit.  No deployment possible"
-  exit 0
+  if [ -z "$OPENSHIFT_APP" ] ; then
+    echo "Not a BRANCH commit.  No deployment possible"
+    exit 0
+  fi
 fi
 
 # Allow for additional customizations...
@@ -41,8 +43,10 @@ done
 echo "Will Deploy to $OPENSHIFT_APP"
 #
 set -e
-gem install net-ssh --version 2.9.4
-gem install rhc
+if ! type rhc ; then
+  gem install net-ssh --version 2.9.4
+  gem install rhc
+fi
 AUTH="-l $OPENSHIFT_USER -p $OPENSHIFT_SECRET"
 rhc app-show $OPENSHIFT_APP $AUTH | grep -v 'Password:' | grep -v 'Username:'
 GITURL="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  Git URL: ' | cut -d: -f2-)"
@@ -51,9 +55,14 @@ GITHOST="$(echo $GITURL | cut -d'@' -f2 | cut -d/ -f1)"
 [ -z "$GITHOST" ] && fatal "MISSING GITHOST"
 ssh-keyscan $GITHOST > ~/.ssh/known_hosts
 
-yes '' | ssh-keygen -N ''
-rhc sshkey remove temp $AUTH || true
-rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
+if [ -f $HOME/.ssh/id_rsa ] ; then
+  REKEY=:
+else
+  REKEY=
+fi
+yes '' | $REKEY ssh-keygen -N ''
+$REKEY rhc sshkey remove temp $AUTH || true
+$REKEY rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
 git remote add openshift -f $GITURL
 pwd
 git status
@@ -62,4 +71,4 @@ echo Merging changes from openshift/master to our branch
 git merge openshift/master -s recursive -X ours
 echo Sending changes to openshift/master
 git push openshift HEAD:master
-rhc sshkey remove temp $AUTH || true
+$REKEY rhc sshkey remove temp $AUTH || true
