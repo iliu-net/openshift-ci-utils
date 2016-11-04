@@ -6,10 +6,10 @@ fatal() {
 }
 
 echo "DIY DEPLOY OPENSHIFT"
-if [ -n "$TRAVIS_BRANCH" ] ; then
-  OPENSHIFT_APP="$TRAVIS_BRANCH"
-else
-  if [ -z "$OPENSHIFT_APP" ] ; then
+if [ -z "$OPENSHIFT_APP" ] ; then
+  if [ -n "$TRAVIS_BRANCH" ] ; then
+    OPENSHIFT_APP="$TRAVIS_BRANCH"
+  else
     echo "Not a BRANCH commit.  No deployment possible"
     exit 0
   fi

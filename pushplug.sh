@@ -6,12 +6,15 @@ fatal() {
 }
 
 echo "PUSH PLUG"
-if [ -n "$TRAVIS_BRANCH" ] ; then
-  OPENSHIFT_APP="$TRAVIS_BRANCH"
-else
-  echo "Not a BRANCH commit.  No deployment possible"
-  exit 0
+if [ -z "$OPENSHIFT_APP" ] ; then
+  if [ -n "$TRAVIS_BRANCH" ] ; then
+    OPENSHIFT_APP="$TRAVIS_BRANCH"
+  else
+    echo "Not a BRANCH commit.  No deployment possible"
+    exit 0
+  fi
 fi
+
 if [ -n "$TRAVIS_REPO_SLUG" ] ; then
   WP_PLUGIN="$(basename "$TRAVIS_REPO_SLUG")"
 fi
