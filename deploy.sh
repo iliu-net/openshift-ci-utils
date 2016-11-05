@@ -63,6 +63,7 @@ fi
 yes '' | $REKEY ssh-keygen -N ''
 $REKEY rhc sshkey remove temp $AUTH || true
 $REKEY rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
+git remote remove openshift
 git remote add openshift -f $GITURL
 pwd
 git status
