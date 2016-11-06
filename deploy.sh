@@ -63,14 +63,15 @@ fi
 yes '' | $REKEY ssh-keygen -N ''
 $REKEY rhc sshkey remove temp $AUTH || true
 $REKEY rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
+
 git remote remove openshift || true
 git remote add openshift -f $GITURL
 pwd
 git status
 git remote -v
-export GIT_EDITOR=ed
+export GIT_EDITOR=false # It is an error to ask for this!
 echo Merging changes from openshift/master to our branch
-git merge openshift/master -s recursive -X ours
+git merge openshift/master -s recursive -X ours -m "$(date +%Y-%m-%d.%H:%M:%S)"
 echo Sending changes to openshift/master
 git push openshift HEAD:master
 $REKEY rhc sshkey remove temp $AUTH || true
