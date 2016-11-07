@@ -50,8 +50,10 @@ done
 echo "Will Deploy to $OPENSHIFT_APP"
 #
 set -e
-gem install net-ssh --version 2.9.4
-gem install rhc
+if ! type rhc ; then
+  gem install net-ssh --version 2.9.4
+  gem install rhc
+fi
 AUTH="-l $OPENSHIFT_USER -p $OPENSHIFT_SECRET"
 rhc app-show $OPENSHIFT_APP $AUTH | grep -v 'Password:' | grep -v 'Username:'
 
@@ -60,9 +62,15 @@ SSHADDR="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  SSH: ' | cut -d: -f2-)"
 SSHHOST="$(echo $SSHADDR| cut -d'@' -f2)"
 [ -z "$SSHHOST" ] && fatal "MISSING SSHHOST ($SSHADDR)"
 ssh-keyscan $SSHHOST > ~/.ssh/known_hosts
-yes '' | ssh-keygen -N ''
-rhc sshkey remove temp $AUTH || true
-rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
+
+if [ -f $HOME/.ssh/id_rsa ] ; then
+  REKEY=:
+else
+  REKEY=
+fi
+yes '' | $REKEY ssh-keygen -N ''
+$REKEY rhc sshkey remove temp $AUTH || true
+$REKEY rhc sshkey add temp $HOME/.ssh/id_rsa.pub $AUTH
 
 SSHCMD="ssh -i $HOME/.ssh/id_rsa $SSHADDR"
 
@@ -72,8 +80,6 @@ SSHCMD="ssh -i $HOME/.ssh/id_rsa $SSHADDR"
 # move $WP_PLUGIN.t to $WP_PLUGIN
 # rm -rf $P_PLUGIN.o
 
-
-set -x
 plug_path="app-root/data/current/wp-content/plugins/$WP_PLUGIN"
 $SSHCMD mkdir -p "$plug_path.t"
 $PACK_CMD | $SSHCMD $UNPACK_CMD -C "$plug_path.t"
@@ -83,4 +89,4 @@ $PACK_CMD | $SSHCMD $UNPACK_CMD -C "$plug_path.t"
   echo "rm -rf \"$plug_path.p\""
 ) | $SSHCMD
 
-rhc sshkey remove temp $AUTH || true
+$REKEY rhc sshkey remove temp $AUTH || true
