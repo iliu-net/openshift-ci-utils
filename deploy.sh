@@ -53,6 +53,13 @@ GITURL="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  Git URL: ' | cut -d: -f2-)"
 [ -z "$GITURL" ] && fatal "MISSING GITURL"
 GITHOST="$(echo $GITURL | cut -d'@' -f2 | cut -d/ -f1)"
 [ -z "$GITHOST" ] && fatal "MISSING GITHOST"
+
+if [ -f $HOME/.ssh/known_hosts ] ; then
+  cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts.tmp
+  RECOVER_KNOWN_HOSTS=yes
+else
+  RECOVER_KNOWN_HOSTS=no
+fi
 ssh-keyscan $GITHOST > ~/.ssh/known_hosts
 
 if [ -f $HOME/.ssh/id_rsa ] ; then
@@ -75,3 +82,5 @@ git merge openshift/master -s recursive -X ours -m "$(date +%Y-%m-%d.%H:%M:%S)"
 echo Sending changes to openshift/master
 git push openshift HEAD:master
 $REKEY rhc sshkey remove temp $AUTH || true
+[ $RECOVER_KNOWN_HOSTS = yes ] \
+  && mv $HOME/.ssh/known_hosts.tmp $HOME/.ssh/known_hosts

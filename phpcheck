@@ -1,5 +1,8 @@
 #!/bin/sh
 find * -type f -name '*.php' | (
+  [ -z "$IGNORE" ] && exec cat
+  exec grep -v "$IGNORE"
+) | (
   rv=0
   while read php
   do

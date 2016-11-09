@@ -61,6 +61,13 @@ SSHADDR="$(rhc app-show $OPENSHIFT_APP $AUTH| grep '  SSH: ' | cut -d: -f2-)"
 [ -z "$SSHADDR" ] && fatal "MISSING SSHADDR"
 SSHHOST="$(echo $SSHADDR| cut -d'@' -f2)"
 [ -z "$SSHHOST" ] && fatal "MISSING SSHHOST ($SSHADDR)"
+
+if [ -f $HOME/.ssh/known_hosts ] ; then
+  cp $HOME/.ssh/known_hosts $HOME/.ssh/known_hosts.tmp
+  RECOVER_KNOWN_HOSTS=yes
+else
+  RECOVER_KNOWN_HOSTS=no
+fi
 ssh-keyscan $SSHHOST > ~/.ssh/known_hosts
 
 if [ -f $HOME/.ssh/id_rsa ] ; then
@@ -90,3 +97,5 @@ $PACK_CMD | $SSHCMD $UNPACK_CMD -C "$plug_path.t"
 ) | $SSHCMD
 
 $REKEY rhc sshkey remove temp $AUTH || true
+[ $RECOVER_KNOWN_HOSTS = yes ] \
+  && mv $HOME/.ssh/known_hosts.tmp $HOME/.ssh/known_hosts
