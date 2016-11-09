@@ -8,3 +8,21 @@ find * -type f -name '*.php' | (
   done
   exit $rv
 )
+
+wp_plug() {
+  rv=0
+  if [ -n "$TRAVIS_TAG" ] ; then
+    # Make sure the version tag is updated...
+    local f=$(grep -l 'Version: ' *.php)
+    if grep -q "Version: $TRAVIS_TAG" $f ; then
+      echo "$f: $(grep Version: $f)"
+    else
+      echo "$f: VERSION MISMATCH ($TRAVIS_TAG)!"
+      echo "Found $(grep Version: $f)"
+      rv=1
+    fi
+  fi
+  return $rv
+}
+
+[ $# -gt 0 ] && "$@"
