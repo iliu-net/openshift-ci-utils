@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 find * -type f -name '*.php' | (
   [ -z "$IGNORE" ] && exec cat
   exec grep -v "$IGNORE"
